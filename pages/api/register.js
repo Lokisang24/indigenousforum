@@ -1,7 +1,7 @@
 const { formidable } = require("formidable");
 const fs = require("fs");
 const prisma = require("../../lib/db");
-const { generateIdNumber, generateVerificationCode } = require("../../lib/idGenerator");
+const { generateVerificationCode } = require("../../lib/idGenerator");
 const {
   notifyAdminOfNewApplication,
   sendApplicantAcknowledgement,
@@ -58,8 +58,9 @@ export default async function handler(req, res) {
     const address = String(fields.address || "").trim();
     const gender = String(fields.gender || "").trim();
     const email = String(fields.email || "").trim();
+    const idNumber = String(fields.idNumber || "").trim();
 
-    if (!firstName || !surname || !dateOfBirth || !clan || !address || !gender || !email) {
+    if (!firstName || !surname || !dateOfBirth || !clan || !address || !gender || !email || !idNumber) {
       return res.status(400).json({ error: "All fields are required." });
     }
 
@@ -74,22 +75,33 @@ export default async function handler(req, res) {
       photoUrl = `data:${mime};base64,${buffer.toString("base64")}`;
     }
 
-    const application = await withUniqueRetry(() =>
-      prisma.application.create({
-        data: {
-          firstName,
-          surname,
-          dateOfBirth: new Date(dateOfBirth),
-          clan,
-          address,
-          gender,
-          email,
-          photoUrl,
-          idNumber: generateIdNumber(),
-          verificationCode: generateVerificationCode(),
-        },
-      })
-    );
+    let application;
+    try {
+      application = await withUniqueRetry(() =>
+        prisma.application.create({
+          data: {
+            firstName,
+            surname,
+            dateOfBirth: new Date(dateOfBirth),
+            clan,
+            address,
+            gender,
+            email,
+            photoUrl,
+            idNumber,
+            verificationCode: generateVerificationCode(),
+          },
+        })
+      );
+    } catch (err) {
+      if (err.code === "P2002") {
+        const target = (err.meta && err.meta.target) || "";
+        if (target.includes("idNumber")) {
+          return res.status(400).json({ error: "This ID number has already been used to register." });
+        }
+      }
+      throw err;
+    }
 
     // Fire-and-forget-ish notifications (awaited but errors are logged, not fatal)
     try {

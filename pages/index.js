@@ -9,6 +9,7 @@ export default function Home() {
     address: "",
     gender: "",
     email: "",
+    idNumber: "",
   });
   const [photo, setPhoto] = useState(null);
   const [status, setStatus] = useState({ loading: false, message: "", error: "" });
@@ -46,6 +47,7 @@ export default function Home() {
         address: "",
         gender: "",
         email: "",
+        idNumber: "",
       });
       setPhoto(null);
     } catch (err) {
@@ -68,9 +70,6 @@ export default function Home() {
             {result && (
               <div style={{ marginTop: 8 }}>
                 <div>
-                  <b>ID No:</b> {result.idNumber}
-                </div>
-                <div>
                   <b>Verification Code:</b> {result.verificationCode}
                 </div>
               </div>
@@ -86,6 +85,17 @@ export default function Home() {
           <div className="form-group">
             <label>Surname</label>
             <input type="text" name="surname" value={form.surname} onChange={handleChange} required />
+          </div>
+          <div className="form-group">
+            <label>ID Number</label>
+            <input
+              type="text"
+              name="idNumber"
+              placeholder="e.g. RC 942183"
+              value={form.idNumber}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div className="form-group">
             <label>Date of Birth</label>
