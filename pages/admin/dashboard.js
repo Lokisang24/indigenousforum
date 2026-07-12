@@ -5,16 +5,15 @@ const TABS = ["PENDING", "APPROVED", "REJECTED"];
 const PAGE_SIZE = 5;
 
 const NAV_ITEMS = [
-  { key: "DASHBOARD", label: "Dashboard", icon: "\u2302" },
-  { key: "PENDING", label: "Pending", icon: "\u23F3" },
-  { key: "APPROVED", label: "Approved", icon: "\u2713" },
-  { key: "REJECTED", label: "Rejected", icon: "\u2715" },
+  { id: "dashboard", key: "DASHBOARD", label: "Dashboard", icon: "\u2302" },
+  { id: "pending", key: "PENDING", label: "Pending", icon: "\u23F3" },
+  { id: "approved", key: "APPROVED", label: "Approved", icon: "\u2713" },
+  { id: "rejected", key: "REJECTED", label: "Rejected", icon: "\u2715" },
+  { id: "certificates", key: "APPROVED", label: "Certificates", icon: "\u2637" },
 ];
 
-// These map to features noted as "Future Enhancements" in the project README —
-// shown for navigational context, matching the target design, but not yet wired
-// to real pages.
-const COMING_SOON_ITEMS = ["Certificates", "Verification", "Administrators", "Settings"];
+// Still not built out as real pages — shown for layout parity only.
+const COMING_SOON_ITEMS = ["Verification", "Administrators", "Settings"];
 
 function initials(name) {
   return name
@@ -37,6 +36,10 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [viewApplication, setViewApplication] = useState(null);
   const [admin, setAdmin] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const loadStats = async () => {
     const res = await fetch("/api/admin/applications/stats");
@@ -121,6 +124,37 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   };
 
+  const openDeleteConfirm = (app) => {
+    setDeleteTarget(app);
+    setDeletePassword("");
+    setDeleteError("");
+  };
+
+  const confirmDelete = async () => {
+    if (!deletePassword) {
+      setDeleteError("Enter your admin password to confirm.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    const res = await fetch(`/api/admin/applications/${deleteTarget.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: deletePassword }),
+    });
+    const data = await res.json();
+    setDeleting(false);
+
+    if (!res.ok) {
+      setDeleteError(data.error || "Could not delete application.");
+      return;
+    }
+
+    setDeleteTarget(null);
+    load(tab);
+    loadStats();
+  };
+
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     day: "numeric",
@@ -143,8 +177,8 @@ export default function AdminDashboard() {
         <nav className="dash-nav">
           {NAV_ITEMS.map((item) => (
             <button
-              key={item.key}
-              className={tab === item.key || (item.key === "DASHBOARD" && false) ? "active" : ""}
+              key={item.id}
+              className={tab === item.key && item.key !== "DASHBOARD" ? "active" : ""}
               onClick={() => (item.key === "DASHBOARD" ? setTab("PENDING") : setTab(item.key))}
             >
               <span className="icon">{item.icon}</span>
@@ -348,6 +382,14 @@ export default function AdminDashboard() {
                             <button className="view" onClick={() => setViewApplication(app)} title="View details">
                               &#128065;
                             </button>
+                            <button
+                              className="view"
+                              style={{ color: "var(--error-text)" }}
+                              onClick={() => openDeleteConfirm(app)}
+                              title="Delete application"
+                            >
+                              &#128465;
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -403,6 +445,45 @@ export default function AdminDashboard() {
             )}
             <div className="modal-row"><span>Submitted</span><span>{new Date(viewApplication.createdAt).toLocaleString()}</span></div>
             <button className="primary modal-close" onClick={() => setViewApplication(null)}>Close</button>
+          </div>
+        </div>
+      )}
+      {/* Delete confirmation modal — requires the logged-in admin's password */}
+      {deleteTarget && (
+        <div className="modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete application?</h3>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginTop: -8 }}>
+              This permanently deletes <b>{deleteTarget.firstName} {deleteTarget.surname}</b>&apos;s
+              application ({deleteTarget.idNumber}). This cannot be undone. Enter your admin password to confirm.
+            </p>
+
+            {deleteError && <div className="alert error">{deleteError}</div>}
+
+            <div className="form-group">
+              <label>Your Admin Password</label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && confirmDelete()}
+                autoFocus
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="secondary" style={{ flex: 1 }} onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                Cancel
+              </button>
+              <button
+                className="reject"
+                style={{ flex: 1, justifyContent: "center", padding: "11px 0" }}
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete Permanently"}
+              </button>
+            </div>
           </div>
         </div>
       )}
