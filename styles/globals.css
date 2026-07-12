@@ -549,7 +549,11 @@ button.secondary:hover { background: #f7f9fc; border-color: var(--blue-light); }
   border: 1px solid var(--border);
 }
 
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-scroll {
+  overflow-x: auto;
+}
+
+table { width: 100%; min-width: 920px; border-collapse: collapse; font-size: 13px; }
 
 th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 

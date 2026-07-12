@@ -313,6 +313,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <>
+                <div className="table-scroll">
                 <table>
                   <thead>
                     <tr>
@@ -396,6 +397,7 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
 
                 <div className="table-footer">
                   <span>
