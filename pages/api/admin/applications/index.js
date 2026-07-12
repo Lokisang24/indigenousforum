@@ -29,6 +29,7 @@ export default async function handler(req, res) {
       verificationCode: true,
       status: true,
       certificateSerial: true,
+      photoUrl: true,
       createdAt: true,
       reviewedAt: true,
     },

@@ -58,7 +58,8 @@ export default function Home() {
   return (
     <div className="page">
       <div className="brand-header">
-        <h1>Indigenous Forums</h1>
+        <img src="/logo.jpg" alt="Indigenous Forum logo" className="brand-logo" />
+        <h1>Indigenous <span>Forum</span></h1>
         <p>Membership Registration</p>
       </div>
 
