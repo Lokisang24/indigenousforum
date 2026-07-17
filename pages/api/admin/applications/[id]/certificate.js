@@ -1,6 +1,6 @@
 const prisma = require("../../../../../lib/db");
 const { getAdminFromRequest } = require("../../../../../lib/auth");
-const { generateCertificatePdf } = require("../../../../../lib/pdfGenerator");
+const { generateCertificatePdf, getCustomPage2Diagnostic } = require("../../../../../lib/pdfGenerator");
 
 export default async function handler(req, res) {
   const admin = getAdminFromRequest(req);
@@ -10,6 +10,14 @@ export default async function handler(req, res) {
 
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Diagnostic mode: visit the certificate URL with &debug=1 appended to see,
+  // directly in the browser, whether lib/indigenous.jpg was actually found on
+  // the server — no need to dig through Vercel's log UI.
+  if (req.query.debug === "1") {
+    const diagnostic = getCustomPage2Diagnostic();
+    return res.status(200).json(diagnostic);
   }
 
   const { id } = req.query;
